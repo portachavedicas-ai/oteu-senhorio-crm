@@ -187,6 +187,7 @@ tr:hover td { background: rgba(255,255,255,.02); }
 .badge-proposta  { background: rgba(124,58,237,.15); color: #a78bfa; }
 .badge-fechado   { background: rgba(34,197,94,.15);  color: #4ade80; }
 .badge-perdido   { background: rgba(239,68,68,.15);  color: #f87171; }
+.badge-callback  { background: rgba(251,146,60,.15); color: #fb923c; }
 .fonte-badge {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: 11px; color: var(--muted);
@@ -468,6 +469,7 @@ select.input { cursor: pointer; }
           <option>Proposta</option>
           <option>Fechado</option>
           <option>Perdido</option>
+          <option>Callback</option>
         </select>
         <select class="filter-select" id="filter-fonte" onchange="filterLeads()">
           <option value="">Todas as fontes</option>
@@ -570,13 +572,18 @@ select.input { cursor: pointer; }
         </div>
         <div class="field">
           <label>Etapa</label>
-          <select class="input" id="f-etapa">
+          <select class="input" id="f-etapa" onchange="toggleCB()">
             <option>Lead</option>
             <option>Contactado</option>
             <option>Proposta</option>
             <option>Fechado</option>
             <option>Perdido</option>
+            <option>Callback</option>
           </select>
+        </div>
+        <div class="field" id="cb-date-field" style="display:none">
+          <label>📅 Callback — Data e Hora</label>
+          <input type="datetime-local" class="input" id="f-cb-date">
         </div>
       </div>
       <div class="field-row">
@@ -1012,6 +1019,7 @@ async function saveLead() {
     imovel: document.getElementById('f-imovel').value.trim()||null,
     fonte: document.getElementById('f-fonte').value,
     etapa: document.getElementById('f-etapa').value,
+    callback_date: (document.getElementById('f-cb-date')||{}).value || null,
     resp: document.getElementById('f-resp').value.trim()||null,
     invest: parseFloat(document.getElementById('f-invest').value)||null,
   };
@@ -1093,6 +1101,12 @@ document.addEventListener('keydown', e => {
     document.querySelectorAll('.modal-bg.open').forEach(m=>m.classList.remove('open'));
   }
 });
+
+  function toggleCB() {
+    const v = document.getElementById('f-etapa').value;
+    const el = document.getElementById('cb-date-field');
+    if (el) el.style.display = (v === 'Callback') ? '' : 'none';
+  }
 </script>
 </body>
 </html>
