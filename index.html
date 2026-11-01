@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>O Teu Senhorio â CRM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+/* ââ TOKENS ââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+:root {
+  --bg:        #0f1117;
+  --surface:   #181c27;
+  --surface2:  #1e2333;
+  --border:    #2a3045;
+  --accent:    #4f8ef7;
+  --accent2:   #7c3aed;
+  --success:   #22c55e;
+  --warning:   #f59e0b;
+  --danger:    #ef4444;
+  --text:      #e8eaf0;
+  --muted:     #8892a4;
+  --radius:    8px;
+  --font:      'Inter', system-ui, sans-serif;
+  --serif:     'DM Serif Display', Georgia, serif;
+}
+
+/* ââ RESET âââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
+button { cursor: pointer; font-family: inherit; }
+input, textarea, select { font-family: inherit; font-size: 14px; }
+a { color: inherit; text-decoration: none; }
+
+/* ââ LOGIN âââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+#login-screen {
+  position: fixed; inset: 0; background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000; flex-direction: column; gap: 32px;
+}
+.login-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 48px 40px; width: 360px;
+  display: flex; flex-direction: column; gap: 24px;
+}
+.login-logo { font-family: var(--serif); font-size: 26px; color: var(--text); text-align: center; }
+.login-logo span { color: var(--accent); }
+.login-subtitle { color: var(--muted); text-align: center; font-size: 13px; }
+.pin-display {
+  display: flex; gap: 12px; justify-content: center; margin: 8px 0;
+}
+.pin-dot {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid var(--border); background: transparent;
+  transition: background 0.15s, border-color 0.15s;
+}
+.pin-dot.filled { background: var(--accent); border-color: var(--accent); }
+.pin-pad {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+}
+.pin-btn {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--text);
+  padding: 14px; font-size: 18px; font-weight: 500;
+  transition: background 0.1s, transform 0.1s;
+}
+.pin-btn:hover { background: var(--border); }
+.pin-btn:active { transform: scale(0.95); }
+.pin-error { color: var(--danger); font-size: 13px; text-align: center; min-height: 20px; }
+
+/* ââ LAYOUT ââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+#app { display: none; height: 100vh; }
+#app.visible { display: flex; }
+
+.sidebar {
+  width: 220px; flex-shrink: 0; background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.sidebar-logo {
+  padding: 20px 16px; border-bottom: 1px solid var(--border);
+  font-family: var(--serif); font-size: 18px; letter-spacing: -0.3px;
+}
+.sidebar-logo span { color: var(--accent); }
+.sidebar-nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 16px; color: var(--muted); font-size: 13px; font-weight: 500;
+  border-radius: 0; cursor: pointer; transition: color 0.15s, background 0.15s;
+  border: none; background: none; width: 100%; text-align: left;
+}
+.nav-item:hover { color: var(--text); background: var(--surface2); }
+.nav-item.active { color: var(--accent); background: rgba(79,142,247,.08); }
+.nav-icon { width: 16px; height: 16px; flex-shrink: 0; }
+.sidebar-user {
+  padding: 12px 16px; border-top: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.user-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 600; flex-shrink: 0;
+}
+.user-name { font-size: 13px; color: var(--text); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-role { font-size: 11px; color: var(--muted); }
+.logout-btn {
+  background: none; border: none; color: var(--muted); padding: 4px;
+  border-radius: 4px; transition: color 0.15s;
+}
+.logout-btn:hover { color: var(--danger); }
+
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.topbar {
+  padding: 14px 24px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 16px; flex-shrink: 0;
+  background: var(--surface);
+}
+.page-title { font-size: 16px; font-weight: 600; flex: 1; }
+.content { flex: 1; overflow-y: auto; padding: 24px; }
+
+/* ââ STATS ROW âââââââââââââââââââââââââââââââââââââââââââââââââ */
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px 18px;
+}
+.stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+.stat-value { font-size: 26px; font-weight: 600; line-height: 1; }
+.stat-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+/* ââ TOOLBAR âââââââââââââââââââââââââââââââââââââââââââââââââââ */
+.toolbar {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+}
+.search-wrap { position: relative; flex: 1; max-width: 300px; }
+.search-wrap svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--muted); pointer-events: none; }
+.search-input {
+  width: 100%; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--text); padding: 7px 10px 7px 32px;
+  outline: none; transition: border-color 0.15s;
+}
+.search-input:focus { border-color: var(--accent); }
+.filter-select {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--text); padding: 7px 10px;
+  outline: none; cursor: pointer;
+}
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: var(--radius); font-size: 13px; font-weight: 500;
+  border: none; transition: opacity 0.15s, background 0.15s;
+}
+.btn:hover { opacity: 0.85; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+
+/* ââ TABLE âââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+.table-wrap {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+table { width: 100%; border-collapse: collapse; }
+th {
+  text-align: left; padding: 10px 14px; font-size: 11px;
+  color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: .5px;
+  border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+td {
+  padding: 12px 14px; border-bottom: 1px solid var(--border);
+  vertical-align: middle; font-size: 13px;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,.02); }
+.lead-name { font-weight: 500; color: var(--text); }
+.lead-phone { color: var(--muted); font-size: 12px; }
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500;
+  white-space: nowrap;
+}
+.badge-lead    { background: rgba(79,142,247,.15);  color: #6ba3f9; }
+.badge-contactado { background: rgba(245,158,11,.15); color: #fbbf24; }
+.badge-proposta  { background: rgba(124,58,237,.15); color: #a78bfa; }
+.badge-fechado   { background: rgba(34,197,94,.15);  color: #4ade80; }
+.badge-perdido   { background: rgba(239,68,68,.15);  color: #f87171; }
+.badge-callback  { background: rgba(251,146,60,.15); color: #fb923c; }
+.fonte-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; color: var(--muted);
+}
+.new-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+  display: inline-block; margin-right: 4px; animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+.action-btns { display: flex; gap: 6px; }
+
+/* ââ MODAL âââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+.modal-bg {
+  position: fixed; inset: 0; background: rgba(0,0,0,.6);
+  display: none; align-items: center; justify-content: center; z-index: 500;
+  padding: 20px;
+}
+.modal-bg.open { display: flex; }
+.modal {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; width: 100%; max-width: 560px;
+  max-height: 90vh; overflow-y: auto;
+  display: flex; flex-direction: column;
+}
+.modal-header {
+  padding: 20px 24px 16px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+}
+.modal-title { font-size: 16px; font-weight: 600; }
+.modal-close {
+  background: none; border: none; color: var(--muted); font-size: 20px; line-height: 1;
+  padding: 2px 6px; border-radius: 4px; transition: color 0.15s;
+}
+.modal-close:hover { color: var(--text); }
+.modal-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }
+.modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label { font-size: 12px; color: var(--muted); font-weight: 500; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.input {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--text); padding: 8px 10px;
+  outline: none; transition: border-color 0.15s; width: 100%;
+}
+.input:focus { border-color: var(--accent); }
+select.input { cursor: pointer; }
+
+/* ââ DETAIL PANEL ââââââââââââââââââââââââââââââââââââââââââââââ */
+.detail-panel {
+  position: fixed; right: 0; top: 0; bottom: 0; width: 420px;
+  background: var(--surface); border-left: 1px solid var(--border);
+  display: flex; flex-direction: column; z-index: 300;
+  transform: translateX(100%); transition: transform 0.25s ease;
+}
+.detail-panel.open { transform: none; }
+.detail-header {
+  padding: 18px 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-start; gap: 12px;
+}
+.detail-avatar {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--accent2); display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 600; flex-shrink: 0;
+}
+.detail-name { font-size: 16px; font-weight: 600; }
+.detail-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.detail-close {
+  background: none; border: none; color: var(--muted); margin-left: auto;
+  font-size: 20px; padding: 2px 6px; border-radius: 4px; transition: color 0.15s;
+}
+.detail-close:hover { color: var(--text); }
+.detail-tabs {
+  display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.detail-tab {
+  padding: 10px 16px; font-size: 13px; color: var(--muted); border: none;
+  background: none; cursor: pointer; border-bottom: 2px solid transparent;
+  transition: color 0.15s; font-weight: 500;
+}
+.detail-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.detail-body { flex: 1; overflow-y: auto; padding: 16px; }
+.info-row {
+  display: flex; justify-content: space-between; padding: 8px 0;
+  border-bottom: 1px solid var(--border); font-size: 13px;
+}
+.info-row:last-child { border-bottom: none; }
+.info-label { color: var(--muted); }
+.info-val { font-weight: 500; text-align: right; }
+.stage-select { width: 100%; margin-top: 12px; }
+.timeline-item {
+  display: flex; gap: 10px; padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.timeline-item:last-child { border-bottom: none; }
+.tl-icon {
+  width: 28px; height: 28px; border-radius: 50%; background: var(--surface2);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 12px;
+}
+.tl-content { flex: 1; }
+.tl-text { font-size: 13px; }
+.tl-time { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.note-form { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.note-form textarea {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--text); padding: 8px 10px;
+  resize: vertical; min-height: 80px; outline: none; width: 100%;
+  font-family: inherit; font-size: 13px;
+}
+.note-form textarea:focus { border-color: var(--accent); }
+.media-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px;
+}
+.media-thumb {
+  aspect-ratio: 1; border-radius: 6px; background: var(--surface2);
+  overflow: hidden; border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.media-thumb img, .media-thumb video { width: 100%; height: 100%; object-fit: cover; }
+.upload-btn {
+  background: var(--surface2); border: 1px dashed var(--border);
+  border-radius: 6px; padding: 12px; text-align: center; cursor: pointer;
+  font-size: 12px; color: var(--muted); transition: border-color 0.15s;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.upload-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ââ TOAST âââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+.toast-stack {
+  position: fixed; bottom: 20px; right: 20px; z-index: 999;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.toast {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 10px 14px; font-size: 13px;
+  display: flex; align-items: center; gap: 8px;
+  animation: slideIn 0.2s ease; min-width: 220px; max-width: 320px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.4);
+}
+@keyframes slideIn { from{transform:translateX(30px);opacity:0} to{transform:none;opacity:1} }
+.toast.success { border-color: var(--success); }
+.toast.error   { border-color: var(--danger); }
+.toast-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.toast.success .toast-dot { background: var(--success); }
+.toast.error   .toast-dot { background: var(--danger); }
+
+/* ââ EMPTY âââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+.empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+.empty svg { width: 40px; height: 40px; margin-bottom: 12px; opacity: .4; }
+.empty p { font-size: 14px; }
+
+/* ââ LOADING âââââââââââââââââââââââââââââââââââââââââââââââââââ */
+.spinner {
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 2px solid var(--border); border-top-color: var(--accent);
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+.loading-row td { text-align: center; padding: 40px; }
+
+/* ââ KANBAN ââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+.kanban { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 8px; }
+.kanban-col {
+  min-width: 240px; flex-shrink: 0;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+.kanban-col-header {
+  padding: 12px 14px; font-size: 12px; font-weight: 600;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.kanban-count {
+  background: var(--surface2); border-radius: 10px;
+  padding: 1px 7px; font-size: 11px; color: var(--muted);
+}
+.kanban-cards { padding: 10px; display: flex; flex-direction: column; gap: 8px; min-height: 60px; }
+.kanban-card {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 6px; padding: 10px 12px; cursor: pointer;
+  transition: border-color 0.15s;
+}
+.kanban-card:hover { border-color: var(--accent); }
+.kcard-name { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+.kcard-meta { font-size: 11px; color: var(--muted); }
+
+/* ââ RESPONSIVE ââââââââââââââââââââââââââââââââââââââââââââââââ */
+@media (max-width: 900px) {
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .sidebar { width: 60px; }
+  .sidebar-logo, .nav-item span, .user-name, .user-role { display: none; }
+  .nav-item { justify-content: center; padding: 12px; }
+  .detail-panel { width: 100%; }
+}
+
+/* ── SIDEBAR KPIs ───────────────────────────────────────── */
+.sidebar { width: 230px; }
+.sidebar-kpis { padding: 12px 14px 8px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+.kpi-row { display: flex; gap: 8px; }
+.kpi-card { flex: 1; background: var(--surface2); border-radius: 8px; padding: 8px 10px; min-width: 0; }
+.kpi-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 2px; }
+.kpi-value { font-size: 18px; font-weight: 700; color: var(--text); line-height: 1; }
+.kpi-sub { font-size: 10px; color: var(--muted); margin-top: 2px; }
+.kpi-accent { color: var(--accent) !important; }
+.kpi-green { color: #4ade80 !important; }
+.kpi-orange { color: #fb923c !important; }
+.sidebar-section-title { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; padding: 10px 16px 4px; }
+.sidebar-funil { padding: 4px 14px 8px; border-bottom: 1px solid var(--border); }
+.funil-item { display: flex; align-items: center; justify-content: space-between; padding: 3px 0; font-size: 12px; }
+.funil-bar-wrap { flex: 1; height: 4px; background: var(--border); border-radius: 2px; margin: 0 8px; }
+.funil-bar { height: 4px; border-radius: 2px; background: var(--accent); }
+.funil-count { font-size: 11px; font-weight: 600; color: var(--text); min-width: 18px; text-align: right; }
+.sidebar-callbacks { padding: 4px 14px 8px; border-bottom: 1px solid var(--border); max-height: 120px; overflow-y: auto; }
+.callback-item { display: flex; align-items: flex-start; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+.callback-item:last-child { border-bottom: none; }
+.callback-dot { width: 6px; height: 6px; border-radius: 50%; background: #fb923c; margin-top: 4px; flex-shrink: 0; }
+.callback-name { font-size: 12px; font-weight: 500; color: var(--text); line-height: 1.3; }
+.callback-time { font-size: 10px; color: var(--muted); }
+.sidebar-alerts { padding: 4px 14px 8px; }
+.alert-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; cursor: pointer; }
+.alert-dot { width: 6px; height: 6px; border-radius: 50%; background: #f87171; flex-shrink: 0; }
+.alert-name { font-size: 12px; color: var(--text); }
+.alert-days { font-size: 10px; color: #f87171; }
+.sidebar-empty { font-size: 11px; color: var(--muted); padding: 4px 0; }
+</style>
+</head>
+<body>
+
+<!-- ââ LOGIN âââââââââââââââââââââââââââââââââââââââââââââââââ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">O Teu <span>Senhorio</span></div>
+    <div class="login-subtitle">Introduz o teu PIN para entrar</div>
+    <div class="pin-display" id="pin-display">
+      <div class="pin-dot" id="dot0"></div>
+      <div class="pin-dot" id="dot1"></div>
+      <div class="pin-dot" id="dot2"></div>
+      <div class="pin-dot" id="dot3"></div>
+    </div>
+    <div class="pin-pad">
+      <button class="pin-btn" onclick="pinPress('1')">1</button>
+      <button class="pin-btn" onclick="pinPress('2')">2</button>
+      <button class="pin-btn" onclick="pinPress('3')">3</button>
+      <button class="pin-btn" onclick="pinPress('4')">4</button>
+      <button class="pin-btn" onclick="pinPress('5')">5</button>
+      <button class="pin-btn" onclick="pinPress('6')">6</button>
+      <button class="pin-btn" onclick="pinPress('7')">7</button>
+      <button class="pin-btn" onclick="pinPress('8')">8</button>
+      <button class="pin-btn" onclick="pinPress('9')">9</button>
+      <button class="pin-btn" onclick="pinClear()" style="font-size:13px;color:var(--muted)">â</button>
+      <button class="pin-btn" onclick="pinPress('0')">0</button>
+      <button class="pin-btn" onclick="pinBack()" style="font-size:16px">â«</button>
+    </div>
+    <div class="pin-error" id="pin-error"></div>
+  </div>
+</div>
+
+<!-- ââ APP ââââââââââââââââââââââââââââââââââââââââââââââââââââ -->
+<div id="app">
+  <aside class="sidebar">
+    <div class="sidebar-logo">O Teu <span>Senhorio</span></div>
+    <div class="sidebar-kpis">
+      <div class="kpi-row">
+        <div class="kpi-card"><div class="kpi-label">Total</div><div class="kpi-value kpi-accent" id="sk-total">–</div></div>
+        <div class="kpi-card"><div class="kpi-label">Hoje</div><div class="kpi-value kpi-green" id="sk-today">–</div><div class="kpi-sub">novos leads</div></div>
+      </div>
+      <div class="kpi-row">
+        <div class="kpi-card"><div class="kpi-label">Conversão</div><div class="kpi-value" id="sk-conv">–</div><div class="kpi-sub">Lead→Contrato</div></div>
+        <div class="kpi-card"><div class="kpi-label">Callbacks</div><div class="kpi-value kpi-orange" id="sk-cbcount">–</div><div class="kpi-sub">pendentes</div></div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" onclick="showView('leads')" id="nav-leads">
+        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/></svg>
+        <span>Leads</span>
+      </button>
+      <button class="nav-item" onclick="showView('kanban')" id="nav-kanban">
+        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>
+        <span>Kanban</span>
+      </button>
+    </nav>
+    <div class="sidebar-section-title">Funil</div>
+    <div class="sidebar-funil" id="sk-funil"><div class="sidebar-empty">A carregar…</div></div>
+    <div class="sidebar-section-title">📅 Callbacks Hoje</div>
+    <div class="sidebar-callbacks" id="sk-callbacks"><div class="sidebar-empty">Nenhum hoje</div></div>
+    <div class="sidebar-section-title">🥶 Leads Frios</div>
+    <div class="sidebar-alerts" id="sk-cold"><div class="sidebar-empty">Todos contactados</div></div>
+        <div class="sidebar-user">
+      <div class="user-avatar" id="user-avatar" style="background:var(--accent)">?</div>
+      <div>
+        <div class="user-name" id="user-name">â</div>
+        <div class="user-role" id="user-role">â</div>
+      </div>
+      <button class="logout-btn" onclick="logout()" title="Sair">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="page-title" id="page-title">Leads</div>
+      <button class="btn btn-primary" onclick="openNewLead()">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Nova Lead
+      </button>
+    </div>
+
+    <!-- LEADS VIEW -->
+    <div id="view-leads" class="content">
+      <div class="stats-row" id="stats-row">
+        <div class="stat-card"><div class="stat-label">Total Leads</div><div class="stat-value" id="stat-total">â</div></div>
+        <div class="stat-card"><div class="stat-label">Novas</div><div class="stat-value" id="stat-new" style="color:var(--accent)">â</div></div>
+        <div class="stat-card"><div class="stat-label">Fechadas</div><div class="stat-value" id="stat-closed" style="color:var(--success)">â</div></div>
+        <div class="stat-card"><div class="stat-label">Taxa Fecho</div><div class="stat-value" id="stat-rate">â</div></div>
+      </div>
+      <div class="toolbar">
+        <div class="search-wrap">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35"/></svg>
+          <input class="search-input" id="search-input" placeholder="Pesquisar leadsâ¦" oninput="filterLeads()">
+        </div>
+        <select class="filter-select" id="filter-etapa" onchange="filterLeads()">
+          <option value="">Todas as etapas</option>
+          <option>Lead</option>
+          <option>Contactado</option>
+          <option>Proposta</option>
+          <option>Fechado</option>
+          <option>Perdido</option>
+          <option>Callback</option>
+        </select>
+        <select class="filter-select" id="filter-fonte" onchange="filterLeads()">
+          <option value="">Todas as fontes</option>
+          <option>WhatsApp</option>
+          <option>Instagram</option>
+          <option>Site</option>
+          <option>Manual</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" onclick="loadLeads()">
+          <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          Atualizar
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="exportCSV()">
+          <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          Exportar CSV
+        </button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Contacto</th>
+              <th>ImÃ³vel</th>
+              <th>Etapa</th>
+              <th>Fonte</th>
+              <th>Data</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="leads-tbody">
+            <tr class="loading-row"><td colspan="7"><div class="spinner" style="margin:0 auto"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- KANBAN VIEW -->
+    <div id="view-kanban" class="content" style="display:none">
+      <div class="kanban" id="kanban-board"></div>
+    </div>
+  </main>
+</div>
+
+<!-- ââ DETAIL PANEL âââââââââââââââââââââââââââââââââââââââââââ -->
+<div class="detail-panel" id="detail-panel">
+  <div class="detail-header">
+    <div class="detail-avatar" id="dp-avatar">?</div>
+    <div>
+      <div class="detail-name" id="dp-name">â</div>
+      <div class="detail-meta" id="dp-meta">â</div>
+    </div>
+    <button class="detail-close" onclick="closeDetail()">â</button>
+  </div>
+  <div class="detail-tabs">
+    <button class="detail-tab active" onclick="detailTab('info')">InformaÃ§Ã£o</button>
+    <button class="detail-tab" onclick="detailTab('notas')">Notas</button>
+    <button class="detail-tab" onclick="detailTab('media')">MÃ©dia</button>
+  </div>
+  <div class="detail-body" id="detail-body"></div>
+</div>
+
+<!-- ââ MODAL NOVA LEAD ââââââââââââââââââââââââââââââââââââââââ -->
+<div class="modal-bg" id="modal-lead">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-lead-title">Nova Lead</div>
+      <button class="modal-close" onclick="closeModal('modal-lead')">â</button>
+    </div>
+    <div class="modal-body">
+      <div class="field-row">
+        <div class="field">
+          <label>Nome *</label>
+          <input class="input" id="f-nome" placeholder="Nome completo">
+        </div>
+        <div class="field">
+          <label>Telefone</label>
+          <input class="input" id="f-tel" placeholder="351912345678">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Email</label>
+          <input class="input" id="f-email" type="email" placeholder="email@exemplo.pt">
+        </div>
+        <div class="field">
+          <label>ImÃ³vel</label>
+          <input class="input" id="f-imovel" placeholder="Morada ou referÃªncia">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Fonte</label>
+          <select class="lnput" id="f-fonte">
+            <option>Manual</option>
+            <option>WhatsApp</option>
+            <option>Instagram</option>
+            <option>Site</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Etapa</label>
+          <select class="input" id="f-etapa" onchange="toggleCB()">
+            <option>Lead</option>
+            <option>Contactado</option>
+            <option>Proposta</option>
+            <option>Fechado</option>
+            <option>Perdido</option>
+            <option>Callback</option>
+          </select>
+        </div>
+        <div class="field" id="cb-date-field" style="display:none">
+          <label>ð Callback â Data e Hora</label>
+          <input type="datetime-local" class="input" id="f-cb-date">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>ResponsÃ¡vel</label>
+          <input class="input" id="f-resp" placeholder="Iniciais (ex: JP)">
+        </div>
+        <div class="field">
+          <label>Investimento (â¬)</label>
+          <input class="input" id="f-invest" type="number" placeholder="79.99">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-lead')">Cancelar</button>
+      <button class="btn btn-primary" id="save-lead-btn" onclick="saveLead()">Criar Lead</button>
+    </div>
+  </div>
+</div>
+
+<!-- ââ TOAST STACK âââââââââââââââââââââââââââââââââââââââââââ -->
+<div class="toast-stack" id="toast-stack"></div>
+
+<!-- ââ HIDDEN FILE INPUT âââââââââââââââââââââââââââââââââââââ -->
+<input type="file" id="file-input" accept="image/*,video/*" style="display:none" onchange="uploadMedia(event)">
+
+<script>
+const API = 'https://oteu-senhorio-backend.onrender.com';
+let currentUser = null;
+let allLeads = [];
+let currentLead = null;
+let editingLead = null;
+let currentDetailTab = 'info';
+
+/* ââ UTILS ââââââââââââââââââââââââââââââââââââââââââââââââââ */
+function toast(msg, type='success') {
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.innerHTML = `<div class="toast-dot"></div>${msg}`;
+  document.getElementById('toast-stack').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+function fmt(str) { return str ? str.substring(0,10) : 'â'; }
+
+function initials(name) {
+  return (name || '?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+}
+
+function etapaBadge(e) {
+  const cls = { Lead:'badge-lead', Contactado:'badge-contactado', Proposta:'badge-proposta', Fechado:'badge-fechado', Perdido:'badge-perdido' };
+  return `<span class="badge ${cls[e]||'badge-lead'}">${e}</span>`;
+}
+
+/* ââ PIN LOGIN âââââââââââââââââââââââââââââââââââââââââââââââ */
+let pinValue = '';
+
+function pinPress(d) {
+  if (pinValue.length >= 4) return;
+  pinValue += d;
+  updatePinDisplay();
+  if (pinValue.length === 4) setTimeout(doLogin, 200);
+}
+function pinBack() { pinValue = pinValue.slice(0,-1); updatePinDisplay(); }
+function pinClear() { pinValue = ''; updatePinDisplay(); document.getElementById('pin-error').textContent = ''; }
+function updatePinDisplay() {
+  for (let i=0; i<4; i++) {
+    document.getElementById('dot'+i).classList.toggle('filled', i < pinValue.length);
+  }
+}
+async function doLogin() {
+  try {
+    const res = await fetch(API+'/api/auth/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({pin: pinValue})
+    });
+    if (!res.ok) throw new Error();
+    currentUser = await res.json();
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').classList.add('visible');
+    document.getElementById('user-name').textContent = currentUser.nome;
+    document.getElementById('user-role').textContent = currentUser.role || 'Agente';
+    const av = document.getElementById('user-avatar');
+    av.textContent = currentUser.initials || initials(currentUser.nome);
+    av.style.background = currentUser.color || 'var(--accent)';
+    loadLeads();
+  } catch {
+    pinClear();
+    document.getElementById('pin-error').textContent = 'PIN invÃ¡lido. Tenta novamente.';
+    document.querySelectorAll('.pin-dot').forEach(d => {
+      d.style.borderColor = 'var(--danger)';
+      setTimeout(()=>d.style.borderColor='', 600);
+    });
+  }
+}
+function logout() {
+  currentUser = null;
+  pinValue = '';
+  updatePinDisplay();
+  document.getElementById('pin-error').textContent = '';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').classList.remove('visible');
+  closeDetail();
+}
+
+/* ââ NAVIGATION ââââââââââââââââââââââââââââââââââââââââââââââ */
+function showView(v) {
+  ['leads','kanban'].forEach(id => {
+    document.getElementById('view-'+id).style.display = id===v ? '' : 'none';
+    document.getElementById('nav-'+id).classList.toggle('active', id===v);
+  });
+  document.getElementById('page-title').textContent = v==='kanban' ? 'Kanban' : 'Leads';
+  if (v==='kanban') renderKanban();
+}
+
+/* ââ DADOS DE EXEMPLO ââââââââââââââââââââââââââââââââââââââââ */
+const EXEMPLO_LEADS = [
+  /* Instagram */
+  { id:-1, nome:'Ana Ferreira', tel:'351912345678', email:'ana.ferreira@gmail.com', imovel:'Rua das Flores 12, Lisboa', etapa:'Lead', fonte:'Instagram', is_new:true, notas:'Viu anÃºncio do Senhorio no Instagram. T2 em Lisboa, quer arrendar rapidamente.', created_at:'2026-10-28T10:00:00Z' },
+  /* Facebook */
+  { id:-2, nome:'JoÃ£o Silva', tel:'351961234567', email:'joao.silva@outlook.pt', imovel:'Av. da Liberdade 45, Porto', etapa:'Contactado', fonte:'Facebook', is_new:false, notas:'Lead gerada pelo Meta Ads. ProprietÃ¡rio de apartamento no Porto, interessado no serviÃ§o premium.', created_at:'2026-10-25T14:30:00Z' },
+  /* WhatsApp */
+  { id:-3, nome:'Maria Santos', tel:'351933456789', email:'m.santos@sapo.pt', imovel:'Travessa do Carmo 8, Braga', etapa:'Proposta', fonte:'WhatsApp', is_new:false, invest:79.99, notas:'Entrou em contacto via WhatsApp. Tem T3 em Braga desocupado desde Setembro. Proposta enviada.', created_at:'2026-10-20T09:15:00Z' },
+  /* Cold Call */
+  { id:-4, nome:'Carlos Rodrigues', tel:'351914567890', email:'c.rodrigues@gmail.com', imovel:'Rua do Porto 23, Coimbra', etapa:'Fechado', fonte:'Cold Call', is_new:false, invest:79.99, notas:'Contactado por chamada fria a partir de lista de proprietÃ¡rios. Assinou contrato. ImÃ³vel T2 em Coimbra.', created_at:'2026-10-15T11:00:00Z' },
+  /* Site */
+  { id:-5, nome:'InÃªs Oliveira', tel:'351965678901', email:'ines.oliveira@gmail.com', imovel:'Largo da SÃ© 5, Ãvora', etapa:'Lead', fonte:'Site', is_new:true, notas:'Preencheu formulÃ¡rio no site. ProprietÃ¡ria de moradia em Ãvora, procura inquilino de longa duraÃ§Ã£o.', created_at:'2026-10-30T16:45:00Z' },
+  /* Email */
+  { id:-6, nome:'Rui Costa', tel:'351936789012', email:'rui.costa@hotmail.com', imovel:'Av. Central 100, Faro', etapa:'Contactado', fonte:'Email', is_new:false, notas:'Respondeu a campanha de email marketing. Tem apartamento de fÃ©rias em Faro, quer arrendamento anual.', created_at:'2026-10-18T08:30:00Z' },
+  /* IndicaÃ§Ã£o */
+  { id:-7, nome:'Sofia Mendes', tel:'351926789013', email:'sofia.mendes@gmail.com', imovel:'CalÃ§ada do Combro 33, Lisboa', etapa:'Proposta', fonte:'IndicaÃ§Ã£o', is_new:false, invest:79.99, notas:'Indicada pela Maria Santos (lead #3). ProprietÃ¡ria de T1 no Bairro Alto. Muito motivada.', created_at:'2026-10-22T15:00:00Z' },
+  /* Manual */
+  { id:-8, nome:'Pedro Almeida', tel:'351917890124', email:null, imovel:'Rua de Cedofeita 88, Porto', etapa:'Perdido', fonte:'Manual', is_new:false, notas:'Adicionado manualmente apÃ³s contacto em evento de investimento imobiliÃ¡rio. Desistiu â optou por gerir sozinho.', created_at:'2026-10-05T10:30:00Z' },
+];
+
+/* ââ LEADS âââââââââââââââââââââââââââââââââââââââââââââââââââ */
+async function loadLeads() {
+  document.getElementById('leads-tbody').innerHTML =
+    '<tr class="loading-row"><td colspan="7"><div class="spinner" style="margin:0 auto"></div></td></tr>';
+  try {
+    const res = await fetch(API+'/api/leads');
+    if (!res.ok) throw new Error('HTTP '+res.status);
+    allLeads = await res.json();
+    if (!allLeads.length) {
+      allLeads = EXEMPLO_LEADS;
+      toast('A mostrar dados de exemplo â adiciona as tuas leads!', 'success');
+    }
+    updateStats();
+    filterLeads();
+  } catch(e) {
+    document.getElementById('leads-tbody').innerHTML =
+      `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--danger)">
+        Erro ao carregar leads: ${e.message}.<br><button class="btn btn-ghost btn-sm" onclick="loadLeads()" style="margin-top:8px">Tentar novamente</button>
+      </td></tr>`;
+  }
+}
+
+function updateStats() {
+  const total = allLeads.length;
+  const novas = allLeads.filter(l=>l.is_new).length;
+  const fechadas = allLeads.filter(l=>l.etapa==='Fechado').length;
+  const rate = total ? Math.round(fechadas/total*100) : 0;
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-new').textContent = novas;
+  document.getElementById('stat-closed').textContent = fechadas;
+  document.getElementById('stat-rate').textContent = rate + '%';
+}
+
+function filterLeads() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  const etapa = document.getElementById('filter-etapa').value;
+  const fonte = document.getElementById('filter-fonte').value;
+  let filtered = allLeads.filter(l => {
+    const text = `${l.nome} ${l.tel||''} ${l.email||''} ${l.imovel||''}`.toLowerCase();
+    return (!q || text.includes(q))
+      && (!etapa || l.etapa === etapa)
+      && (!fonte || l.fonte === fonte);
+  });
+  renderLeads(filtered); refreshSidebarKPIs();
+}
+
+function renderLeads(leads) {
+  if (!leads.length) {
+    document.getElementById('leads-tbody').innerHTML =
+      `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted)">Nenhuma lead encontrada</td></tr>`;
+    return;
+  }
+  document.getElementById('leads-tbody').innerHTML = leads.map(l => `
+    <tr>
+      <td>
+        ${l.is_new ? '<span class="new-dot"></span>' : ''}
+        <span class="lead-name">${l.nome}</span>
+      </td>
+      <td>
+        <div>${l.tel ? `<a href="tel:${l.tel}" style="color:var(--accent)">${l.tel}</a>` : 'â'}</div>
+        <div class="lead-phone">${l.email||''}</div>
+      </td>
+      <td style="color:var(--muted)">${l.imovel||'â'}</td>
+      <td>${etapaBadge(l.etapa||'Lead')}</td>
+      <td><span class="fonte-badge">${l.fonte||'â'}</span></td>
+      <td style="color:var(--muted)">${fmt(l.data||l.created_at)}</td>
+      <td>
+        <div class="action-btns">
+          <button class="btn btn-ghost btn-sm" onclick="openDetail(${l.id})">Ver</button>
+          <button class="btn btn-ghost btn-sm" onclick="openEditLead(${l.id})">Editar</button>
+          <button class="btn btn-sm" style="background:rgba(239,68,68,.15);color:var(--danger)" onclick="deleteLead(${l.id})">â</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+/* ââ KANBAN ââââââââââââââââââââââââââââââââââââââââââââââââââ */
+const ETAPAS = ['Lead','Contactado','Proposta','Fechado','Perdido'];
+const ETAPA_COLORS = { Lead:'var(--accent)', Contactado:'var(--warning)', Proposta:'var(--accent2)', Fechado:'var(--success)', Perdido:'var(--danger)' };
+
+function renderKanban() {
+  const board = document.getElementById('kanban-board');
+  board.innerHTML = ETAPAS.map(etapa => {
+    const cards = allLeads.filter(l=>l.etapa===etapa);
+    return `
+      <div class="kanban-col">
+        <div class="kanban-col-header" style="border-top:3px solid ${ETAPA_COLORS[etapa]}">
+          <span>${etapa}</span>
+          <span class="kanban-count">${cards.length}</span>
+        </div>
+        <div class="kanban-cards">
+          ${cards.length ? cards.map(l=>`
+            <div class="kanban-card" onclick="openDetail(${l.id})">
+              <div class="kcard-name">${l.is_new?'ðµ ':''}${l.nome}</div>
+              <div class="kcard-meta">${l.tel||l.email||l.fonte||''}</div>
+              ${l.imovel ? `<div class="kcard-meta" style="margin-top:3px">ð  ${l.imovel}</div>` : ''}
+            </div>
+          `).join('') : `<div style="font-size:12px;color:var(--muted);text-align:center;padding:12px">Sem leads</div>`}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/* ââ DETAIL PANEL ââââââââââââââââââââââââââââââââââââââââââââ */
+function openDetail(id) {
+  currentLead = allLeads.find(l=>l.id===id);
+  if (!currentLead) return;
+  const panel = document.getElementById('detail-panel');
+  document.getElementById('dp-avatar').textContent = initials(currentLead.nome);
+  document.getElementById('dp-name').textContent = currentLead.nome;
+  document.getElementById('dp-meta').textContent = [currentLead.tel, currentLead.email].filter(Boolean).join(' Â· ') || currentLead.fonte;
+  panel.classList.add('open');
+  detailTab('info');
+  // mark as not new
+  if (currentLead.is_new) {
+    fetch(API+'/api/leads/'+id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({is_new:false})});
+    currentLead.is_new = false;
+    const lead = allLeads.find(l=>l.id===id);
+    if (lead) lead.is_new = false;
+    filterLeads();
+  }
+}
+
+function closeDetail() { document.getElementById('detail-panel').classList.remove('open'); currentLead = null; }
+
+function detailTab(tab) {
+  currentDetailTab = tab;
+  document.querySelectorAll('.detail-tab').forEach((t,i) => {
+    t.classList.toggle('active', ['info','notas','media'][i]===tab);
+  });
+  const body = document.getElementById('detail-body');
+  if (tab === 'info') renderDetailInfo(body);
+  else if (tab === 'notas') renderDetailNotas(body);
+  else renderDetailMedia(body);
+}
+
+function renderDetailInfo(body) {
+  const l = currentLead;
+  body.innerHTML = `
+    <div style="margin-bottom:12px">
+      ${[
+        ['Etapa', etapaBadge(l.etapa||'Lead')],
+        ['Fonte', l.fonte||'â'],
+        ['Telefone', l.tel ? `<a href="tel:${l.tel}" style="color:var(--accent)">${l.tel}</a>` : 'â'],
+        ['Email', l.email||'â'],
+        ['ImÃ³vel', l.imovel||'â'],
+        ['Investimento', l.invest ? 'â¬'+l.invest : 'â'],
+        ['ResponsÃ¡vel', l.resp||'â'],
+        ['Data', fmt(l.data||l.created_at)],
+      ].map(([k,v])=>`<div class="info-row"><span class="info-label">${k}</span><span class="info-val">${v}</span></div>`).join('')}
+    </div>
+    <div class="field">
+      <label style="font-size:12px;color:var(--muted);font-weight:500">Alterar etapa</label>
+      <select class="input stage-select" onchange="updateStage(this.value)">
+        ${ETAPAS.map(e=>`<option ${e===l.etapa?'selected':''}>${e}</option>`).join('')}
+      </select>
+    </div>
+    <div style="margin-top:16px;display:flex;gap:8px">
+      <button class="btn btn-ghost btn-sm" onclick="openEditLead(${l.id})">Editar</button>
+      <button class="btn btn-sm" style="background:rgba(239,68,68,.15);color:var(--danger)" onclick="deleteLead(${l.id})">Apagar</button>
+    </div>
+  `;
+}
+
+async function updateStage(etapa) {
+  if (!currentLead) return;
+  try {
+    const res = await fetch(API+'/api/leads/'+currentLead.id, {
+      method:'PATCH', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({etapa})
+    });
+    if (!res.ok) throw new Error();
+    currentLead.etapa = etapa;
+    const lead = allLeads.find(l=>l.id===currentLead.id);
+    if (lead) lead.etapa = etapa;
+    filterLeads();
+    toast('Etapa atualizada');
+  } catch { toast('Erro ao atualizar', 'error'); }
+}
+
+function renderDetailNotas(body) {
+  const notas = currentLead.ts_notes || [];
+  body.innerHTML = `
+    <div>
+      ${notas.length ? notas.map(n=>`
+        <div class="timeline-item">
+          <div class="tl-icon">ð</div>
+          <div class="tl-content">
+            <div class="tl-text">${n.txt}</div>
+            <div class="tl-time">${n.autor||'Sistema'} Â· ${fmt(n.created_at)}</div>
+          </div>
+        </div>
+      `).join('') : '<div style="color:var(--muted);font-size:13px;padding:12px 0">Sem notas ainda.</div>'}
+    </div>
+    <div class="note-form">
+      <textarea id="nota-input" placeholder="Adicionar notaâ¦"></textarea>
+      <button class="btn btn-primary btn-sm" onclick="addNota()">Guardar nota</button>
+    </div>
+  `;
+}
+
+async function addNota() {
+  const txt = document.getElementById('nota-input')?.value?.trim();
+  if (!txt || !currentLead) return;
+  try {
+    const res = await fetch(API+'/api/leads/'+currentLead.id+'/notes', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({txt, autor: currentUser?.nome||'Agente'})
+    });
+    if (!res.ok) throw new Error();
+    const nota = await res.json();
+    if (!currentLead.ts_notes) currentLead.ts_notes = [];
+    currentLead.ts_notes.unshift(nota);
+    renderDetailNotas(document.getElementById('detail-body'));
+    toast('Nota guardada');
+  } catch { toast('Erro ao guardar nota', 'error'); }
+}
+
+function renderDetailMedia(body) {
+  const media = currentLead.ts_media || [];
+  body.innerHTML = `
+    <label class="upload-btn" onclick="document.getElementById('file-input').click()">
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      Adicionar foto ou vÃ­deo
+    </label>
+    <div class="media-grid" id="media-grid">
+      ${media.map(m=>`
+        <div class="media-thumb" onclick="window.open('${m.url}','_blank')">
+          ${m.tipo==='video'
+            ? `<video src="${m.url}" muted></video>`
+            : `<img src="${m.url}" alt="${m.nome||''}" loading="lazy">`
+          }
+        </div>
+      `).join('')}
+    </div>
+    ${!media.length ? '<div style="color:var(--muted);font-size:13px;margin-top:12px">Sem ficheiros ainda.</div>' : ''}
+  `;
+}
+
+async function uploadMedia(evt) {
+  if (!currentLead || !evt.target.files.length) return;
+  const file = evt.target.files[0];
+  const fd = new FormData();
+  fd.append('file', file);
+  toast('A enviar ficheiroâ¦');
+  try {
+    const res = await fetch(API+'/api/leads/'+currentLead.id+'/media', { method:'POST', body: fd });
+    if (!res.ok) throw new Error('HTTP '+res.status);
+    const media = await res.json();
+    if (!currentLead.ts_media) currentLead.ts_media = [];
+    currentLead.ts_media.push(media);
+    if (currentDetailTab==='media') renderDetailMedia(document.getElementById('detail-body'));
+    toast('Ficheiro enviado');
+  } catch(e) { toast('Erro no upload: '+e.message, 'error'); }
+  evt.target.value = '';
+}
+
+/* ââ MODAL LEAD ââââââââââââââââââââââââââââââââââââââââââââââ */
+function openNewLead() {
+  editingLead = null;
+  ['nome','tel','email','imovel','resp','invest'].forEach(f => {
+    const el = document.getElementById('f-'+f);
+    if (el) el.value = '';
+  });
+  document.getElementById('f-fonte').value = 'Manual';
+  document.getElementById('f-etapa').value = 'Lead';
+  document.getElementById('modal-lead-title').textContent = 'Nova Lead';
+  document.getElementById('save-lead-btn').textContent = 'Criar Lead';
+  openModal('modal-lead');
+}
+
+function openEditLead(id) {
+  editingLead = allLeads.find(l=>l.id===id);
+  if (!editingLead) return;
+  document.getElementById('f-nome').value = editingLead.nome||'';
+  document.getElementById('f-tel').value = editingLead.tel||'';
+  document.getElementById('f-email').value = editingLead.email||'';
+  document.getElementById('f-imovel').value = editingLead.imovel||'';
+  document.getElementById('f-fonte').value = editingLead.fonte||'Manual';
+  document.getElementById('f-etapa').value = editingLead.etapa||'Lead';
+  document.getElementById('f-resp').value = editingLead.resp||'';
+  document.getElementById('f-invest').value = editingLead.invest||'';
+  document.getElementById('modal-lead-title').textContent = 'Editar Lead';
+  document.getElementById('save-lead-btn').textContent = 'Guardar';
+  openModal('modal-lead');
+}
+
+async function saveLead() {
+  const nome = document.getElementById('f-nome').value.trim();
+  if (!nome) { toast('Nome Ã© obrigatÃ³rio', 'error'); return; }
+  const btn = document.getElementById('save-lead-btn');
+  btn.disabled = true; btn.textContent = 'A guardarâ¦';
+  const data = {
+    nome, tel: document.getElementById('f-tel').value.trim()||null,
+    email: document.getElementById('f-email').value.trim()||null,
+    imovel: document.getElementById('f-imovel').value.trim()||null,
+    fonte: document.getElementById('f-fonte').value,
+    etapa: document.getElementById('f-etapa').value,
+    callback_date: (document.getElementById('f-cb-date')||{}).value || null,
+    resp: document.getElementById('f-resp').value.trim()||null,
+    invest: parseFloat(document.getElementById('f-invest').value)||null,
+  };
+  try {
+    let res, lead;
+    if (editingLead) {
+      res = await fetch(API+'/api/leads/'+editingLead.id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+      if (!res.ok) throw new Error();
+      lead = await res.json();
+      const idx = allLeads.findIndex(l=>l.id===editingLead.id);
+      if (idx>=0) allLeads[idx] = {...allLeads[idx],...lead};
+      toast('Lead atualizada');
+    } else {
+      res = await fetch(API+'/api/leads', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+      if (!res.ok) throw new Error();
+      lead = await res.json();
+      allLeads.unshift(lead);
+      toast('Lead criada');
+    }
+    closeModal('modal-lead');
+    updateStats();
+    filterLeads();
+    if (currentLead?.id === lead.id) { currentLead = {...currentLead,...lead}; detailTab(currentDetailTab); }
+  } catch { toast('Erro ao guardar', 'error'); }
+  btn.disabled = false;
+  btn.textContent = editingLead ? 'Guardar' : 'Criar Lead';
+}
+
+async function deleteLead(id) {
+  if (!confirm('Apagar esta lead?')) return;
+  try {
+    const res = await fetch(API+'/api/leads/'+id, {method:'DELETE'});
+    if (!res.ok) throw new Error();
+    allLeads = allLeads.filter(l=>l.id!==id);
+    if (currentLead?.id===id) closeDetail();
+    updateStats();
+    filterLeads();
+    toast('Lead apagada');
+  } catch { toast('Erro ao apagar', 'error'); }
+}
+
+/* ââ EXPORTAR CSV ââââââââââââââââââââââââââââââââââââââââââââ */
+function exportCSV() {
+  if (!allLeads.length) { toast('Sem leads para exportar', 'error'); return; }
+  const cols = ['ID','Nome','Telefone','Email','ImÃ³vel','Etapa','Fonte','Investimento','ResponsÃ¡vel','Data'];
+  const rows = allLeads.map(l => [
+    l.id > 0 ? l.id : '',
+    l.nome || '',
+    l.tel || '',
+    l.email || '',
+    l.imovel || '',
+    l.etapa || '',
+    l.fonte || '',
+    l.invest || '',
+    l.resp || '',
+    (l.data || l.created_at || '').substring(0,10)
+  ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
+  const csv = [cols.join(','), ...rows].join('\r\n');
+  const blob = new Blob(['ï»¿'+csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'leads_' + new Date().toISOString().substring(0,10) + '.csv';
+  a.click();
+  toast('CSV exportado com ' + allLeads.length + ' leads');
+}
+
+/* ââ MODAL UTILS âââââââââââââââââââââââââââââââââââââââââââââ */
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-bg').forEach(bg => {
+  bg.addEventListener('click', e => { if (e.target===bg) bg.classList.remove('open'); });
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (e.key==='Escape') {
+    closeDetail();
+    document.querySelectorAll('.modal-bg.open').forEach(m=>m.classList.remove('open'));
+  }
+});
+
+  function toggleCB() {
+    const v = document.getElementById('f-etapa').value;
+    const el = document.getElementById('cb-date-field');
+    if (el) el.style.display = (v === 'Callback') ? '' : 'none';
+  }
+
+function refreshSidebarKPIs() {
+  const leads = window._leads || allLeads || [];
+  const total = leads.length;
+  const today = new Date().toISOString().slice(0,10);
+  const newToday = leads.filter(l => (l.created_at||'').slice(0,10) === today).length;
+  const contratos = leads.filter(l => ['Contrato','Fechado'].includes(l.etapa)).length;
+  const convPct = total > 0 ? Math.round(contratos/total*100) : 0;
+  const now = new Date();
+  const cbPending = leads.filter(l => l.etapa === 'Callback' && l.callback_date && new Date(l.callback_date) >= now).length;
+  const el = id => document.getElementById(id);
+  if(el('sk-total'))   el('sk-total').textContent   = total;
+  if(el('sk-today'))   el('sk-today').textContent   = newToday;
+  if(el('sk-conv'))    el('sk-conv').textContent    = convPct + '%';
+  if(el('sk-cbcount')) el('sk-cbcount').textContent = cbPending;
+  const etapas = ['Lead','Contactado','Visita','Proposta','Callback','Contrato','Perdido'];
+  const counts = {};
+  etapas.forEach(e => counts[e] = leads.filter(l => l.etapa === e).length);
+  const maxCount = Math.max(1, ...Object.values(counts));
+  const funilEl = el('sk-funil');
+  if(funilEl) {
+    const active = etapas.filter(e => counts[e] > 0);
+    funilEl.innerHTML = active.length ? active.map(e =>
+      '<div class="funil-item"><span style="font-size:11px;color:var(--muted);width:68px;flex-shrink:0">' + e + '</span>' +
+      '<div class="funil-bar-wrap"><div class="funil-bar" style="width:' + Math.round(counts[e]/maxCount*100) + '%"></div></div>' +
+      '<span class="funil-count">' + counts[e] + '</span></div>'
+    ).join('') : '<div class="sidebar-empty">Sem leads</div>';
+  }
+  const cbEl = el('sk-callbacks');
+  if(cbEl) {
+    const cbToday = leads.filter(l => l.etapa === 'Callback' && l.callback_date && l.callback_date.slice(0,10) === today)
+      .sort((a,b) => a.callback_date.localeCompare(b.callback_date));
+    cbEl.innerHTML = cbToday.length ? cbToday.map(l => {
+      const t = l.callback_date ? new Date(l.callback_date).toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'}) : '';
+      return '<div class="callback-item" onclick="openLead('+l.id+')"><div class="callback-dot"></div>' +
+        '<div><div class="callback-name">'+l.nome+'</div><div class="callback-time">'+t+'</div></div></div>';
+    }).join('') : '<div class="sidebar-empty">Nenhum hoje</div>';
+  }
+  const coldEl = el('sk-cold');
+  if(coldEl) {
+    const cutoff = new Date(Date.now() - 7*24*60*60*1000);
+    const cold = leads.filter(l => !['Contrato','Fechado','Perdido'].includes(l.etapa) && new Date(l.updated_at||l.created_at) < cutoff).slice(0,5);
+    coldEl.innerHTML = cold.length ? cold.map(l => {
+      const days = Math.floor((Date.now() - new Date(l.updated_at||l.created_at))/86400000);
+      return '<div class="alert-item" onclick="openLead('+l.id+')"><div class="alert-dot"></div>' +
+        '<div><div class="alert-name">'+l.nome+'</div><div class="alert-days">'+days+' dias sem contacto</div></div></div>';
+    }).join('') : '<div class="sidebar-empty">Todos contactados ✓</div>';
+  }
+}
+
+</script>
