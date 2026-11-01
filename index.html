@@ -480,6 +480,10 @@ select.input { cursor: pointer; }
           <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
           Atualizar
         </button>
+        <button class="btn btn-ghost btn-sm" onclick="exportCSV()">
+          <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          Exportar CSV
+        </button>
       </div>
       <div class="table-wrap">
         <table>
@@ -557,7 +561,7 @@ select.input { cursor: pointer; }
       <div class="field-row">
         <div class="field">
           <label>Fonte</label>
-          <select class="input" id="f-fonte">
+          <select class="lnput" id="f-fonte">
             <option>Manual</option>
             <option>WhatsApp</option>
             <option>Instagram</option>
@@ -688,6 +692,26 @@ function showView(v) {
   if (v==='kanban') renderKanban();
 }
 
+/* ══ DADOS DE EXEMPLO ════════════════════════════════════════ */
+const EXEMPLO_LEADS = [
+  /* Instagram */
+  { id:-1, nome:'Ana Ferreira', tel:'351912345678', email:'ana.ferreira@gmail.com', imovel:'Rua das Flores 12, Lisboa', etapa:'Lead', fonte:'Instagram', is_new:true, notas:'Viu anúncio do Senhorio no Instagram. T2 em Lisboa, quer arrendar rapidamente.', created_at:'2026-10-28T10:00:00Z' },
+  /* Facebook */
+  { id:-2, nome:'João Silva', tel:'351961234567', email:'joao.silva@outlook.pt', imovel:'Av. da Liberdade 45, Porto', etapa:'Contactado', fonte:'Facebook', is_new:false, notas:'Lead gerada pelo Meta Ads. Proprietário de apartamento no Porto, interessado no serviço premium.', created_at:'2026-10-25T14:30:00Z' },
+  /* WhatsApp */
+  { id:-3, nome:'Maria Santos', tel:'351933456789', email:'m.santos@sapo.pt', imovel:'Travessa do Carmo 8, Braga', etapa:'Proposta', fonte:'WhatsApp', is_new:false, invest:79.99, notas:'Entrou em contacto via WhatsApp. Tem T3 em Braga desocupado desde Setembro. Proposta enviada.', created_at:'2026-10-20T09:15:00Z' },
+  /* Cold Call */
+  { id:-4, nome:'Carlos Rodrigues', tel:'351914567890', email:'c.rodrigues@gmail.com', imovel:'Rua do Porto 23, Coimbra', etapa:'Fechado', fonte:'Cold Call', is_new:false, invest:79.99, notas:'Contactado por chamada fria a partir de lista de proprietários. Assinou contrato. Imóvel T2 em Coimbra.', created_at:'2026-10-15T11:00:00Z' },
+  /* Site */
+  { id:-5, nome:'Inês Oliveira', tel:'351965678901', email:'ines.oliveira@gmail.com', imovel:'Largo da Sé 5, Évora', etapa:'Lead', fonte:'Site', is_new:true, notas:'Preencheu formulário no site. Proprietária de moradia em Évora, procura inquilino de longa duração.', created_at:'2026-10-30T16:45:00Z' },
+  /* Email */
+  { id:-6, nome:'Rui Costa', tel:'351936789012', email:'rui.costa@hotmail.com', imovel:'Av. Central 100, Faro', etapa:'Contactado', fonte:'Email', is_new:false, notas:'Respondeu a campanha de email marketing. Tem apartamento de férias em Faro, quer arrendamento anual.', created_at:'2026-10-18T08:30:00Z' },
+  /* Indicação */
+  { id:-7, nome:'Sofia Mendes', tel:'351926789013', email:'sofia.mendes@gmail.com', imovel:'Calçada do Combro 33, Lisboa', etapa:'Proposta', fonte:'Indicação', is_new:false, invest:79.99, notas:'Indicada pela Maria Santos (lead #3). Proprietária de T1 no Bairro Alto. Muito motivada.', created_at:'2026-10-22T15:00:00Z' },
+  /* Manual */
+  { id:-8, nome:'Pedro Almeida', tel:'351917890124', email:null, imovel:'Rua de Cedofeita 88, Porto', etapa:'Perdido', fonte:'Manual', is_new:false, notas:'Adicionado manualmente após contacto em evento de investimento imobiliário. Desistiu — optou por gerir sozinho.', created_at:'2026-10-05T10:30:00Z' },
+];
+
 /* ══ LEADS ═══════════════════════════════════════════════════ */
 async function loadLeads() {
   document.getElementById('leads-tbody').innerHTML =
@@ -696,6 +720,10 @@ async function loadLeads() {
     const res = await fetch(API+'/api/leads');
     if (!res.ok) throw new Error('HTTP '+res.status);
     allLeads = await res.json();
+    if (!allLeads.length) {
+      allLeads = EXEMPLO_LEADS;
+      toast('A mostrar dados de exemplo — adiciona as tuas leads!', 'success');
+    }
     updateStats();
     filterLeads();
   } catch(e) {
@@ -1023,6 +1051,31 @@ async function deleteLead(id) {
     filterLeads();
     toast('Lead apagada');
   } catch { toast('Erro ao apagar', 'error'); }
+}
+
+/* ══ EXPORTAR CSV ════════════════════════════════════════════ */
+function exportCSV() {
+  if (!allLeads.length) { toast('Sem leads para exportar', 'error'); return; }
+  const cols = ['ID','Nome','Telefone','Email','Imóvel','Etapa','Fonte','Investimento','Responsável','Data'];
+  const rows = allLeads.map(l => [
+    l.id > 0 ? l.id : '',
+    l.nome || '',
+    l.tel || '',
+    l.email || '',
+    l.imovel || '',
+    l.etapa || '',
+    l.fonte || '',
+    l.invest || '',
+    l.resp || '',
+    (l.data || l.created_at || '').substring(0,10)
+  ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
+  const csv = [cols.join(','), ...rows].join('\r\n');
+  const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'leads_' + new Date().toISOString().substring(0,10) + '.csv';
+  a.click();
+  toast('CSV exportado com ' + allLeads.length + ' leads');
 }
 
 /* ══ MODAL UTILS ═════════════════════════════════════════════ */
